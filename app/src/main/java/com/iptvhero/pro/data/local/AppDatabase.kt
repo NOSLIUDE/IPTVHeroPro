@@ -2,10 +2,6 @@ package com.iptvhero.pro.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.iptvhero.pro.data.local.dao.ChannelDao
-import com.iptvhero.pro.data.local.dao.ProfileDao
-import com.iptvhero.pro.data.local.entity.ChannelEntity
-import com.iptvhero.pro.data.local.entity.ProfileEntity
 
 @Database(
     entities = [
