@@ -292,7 +292,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             appendBatchLog("${urls.size} fontes encontradas. Iniciando importação em lote...")
 
             urls.forEachIndexed { index, url ->
-                val (type, server, creds) = repository.parseLineToProfileParams(url, index)
+                val params = repository.parseLineToProfileParams(url, index)
+                val type = params.first
+                val server = params.second
+                val creds = params.third
                 val heroName = "Herói #${index + 1} (${type.name})"
                 val res = repository.addAndValidateProfile(
                     heroName = heroName,
