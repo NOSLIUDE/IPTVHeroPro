@@ -15,25 +15,22 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
-// Estado da UI consumido pela navegação e telas
 data class MainUiState(
     val currentStreamUrl: String? = null,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val successMessage: String? = null
 )
 
 class MainViewModel(
     private val repository: IptvRepository
 ) : ViewModel() {
 
-    // Gerenciamento de Estado exigido pela UI e AppNavigation
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    // Cliente HTTP para o Player / Streams
     val okHttpClient: OkHttpClient = OkHttpClient.Builder().build()
 
-    // Perfis do Room
     val profiles: Flow<List<ProfileEntity>> = repository.allProfiles
 
     var activeProfile by mutableStateOf<ProfileEntity?>(null)
@@ -43,7 +40,7 @@ class MainViewModel(
         loadActiveProfile()
     }
 
-    private fun loadActiveProfile() {
+    fun loadActiveProfile() {
         viewModelScope.launch {
             activeProfile = repository.getActiveProfile()
         }
@@ -53,6 +50,20 @@ class MainViewModel(
         viewModelScope.launch {
             repository.setActiveProfile(profileId)
             loadActiveProfile()
+        }
+    }
+
+    // FUNÇÃO RESPONSÁVEL POR EXECUTAR O PARSER E SALVAR NO ROOM
+    fun importBatchTxt(fileContent: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                repository.importBatchTxt(fileContent)
+                loadActiveProfile() // Atualiza o perfil ativo após importar
+                _uiState.update { it.copy(isLoading = false, successMessage = "Lista importada com sucesso!") }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Erro ao importar: ${e.localizedMessage}") }
+            }
         }
     }
 
