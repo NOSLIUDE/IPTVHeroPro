@@ -1,24 +1,35 @@
 package com.iptvhero.pro.data.local
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.iptvhero.pro.data.local.dao.ChannelDao
+import com.iptvhero.pro.data.local.dao.ProfileDao
+import com.iptvhero.pro.data.local.entity.ChannelEntity
+import com.iptvhero.pro.data.local.entity.ProfileEntity
 
-@Database(entities = [ProfileEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        ProfileEntity::class,
+        ChannelEntity::class
+    ],
+    version = 1,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun profileDao(): ProfileDao
+    abstract fun channelDao(): ChannelDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
+        fun getDatabase(context: android.content.Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                val instance = androidx.room.Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "iptv_hero_pro_db"
+                    "iptv_hero_database"
                 ).build()
                 INSTANCE = instance
                 instance
