@@ -1,9 +1,9 @@
 package com.iptvhero.pro.data.repository
 
-import com.iptvhero.pro.data.local.dao.ChannelDao
-import com.iptvhero.pro.data.local.dao.ProfileDao
-import com.iptvhero.pro.data.local.entity.ChannelEntity
-import com.iptvhero.pro.data.local.entity.ProfileEntity
+import com.iptvhero.pro.data.local.ChannelDao
+import com.iptvhero.pro.data.local.ProfileDao
+import com.iptvhero.pro.data.local.ChannelEntity
+import com.iptvhero.pro.data.local.ProfileEntity
 import kotlinx.coroutines.flow.Flow
 
 data class ParsedPlaylist(
