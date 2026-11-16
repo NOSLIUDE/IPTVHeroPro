@@ -1,9 +1,11 @@
-     package com.iptvhero.pro.ui.components
+package com.iptvhero.pro.ui.components
 
-import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import com.iptvhero.pro.data.local.SourceType // <--- IMPORT OBRIGATÓRIO PARA RESOLVER O ERRO
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.iptvhero.pro.data.local.SourceType
 
 @Composable
 fun ProfileManagerDialog(
@@ -18,7 +20,12 @@ fun ProfileManagerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Adicionar Novo Perfil") },
         text = {
-            Column(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -49,50 +56,4 @@ fun ProfileManagerDialog(
             }
         }
     )
-}
-                                           Text(
-                                                        text = statusLabel,
-                                                        color = Color.Black,
-                                                        fontSize = 10.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        modifier = Modifier.background(statusColor, RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                                Text(
-                                                    text = "Tipo: ${profile.sourceType} | Validade: ${profile.getFormattedExpiry()} | Max Conn: ${profile.maxConnections}",
-                                                    color = TextSecondary,
-                                                    fontSize = 12.sp
-                                                )
-                                                Text(
-                                                    text = profile.getContentCountsSummary(),
-                                                    color = HeroBlue,
-                                                    fontSize = 12.sp,
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            }
-
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Button(
-                                                    onClick = { onActivateProfile(profile) },
-                                                    colors = ButtonDefaults.buttonColors(containerColor = if (profile.isActive) StatusGreen else HeroBlue)
-                                                ) {
-                                                    Icon(Icons.Default.CheckCircle, contentDescription = null)
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Text(if (profile.isActive) "Ativo" else "Ativar")
-                                                }
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                IconButton(onClick = { onDeleteProfile(profile) }) {
-                                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Excluir", tint = HeroRed)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
