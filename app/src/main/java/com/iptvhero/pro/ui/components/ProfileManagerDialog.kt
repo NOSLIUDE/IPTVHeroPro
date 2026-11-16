@@ -18,16 +18,14 @@ fun ProfileManagerDialog(
     onDismiss: () -> Unit,
     onActivateProfile: (Long) -> Unit,
     onDeleteProfile: (Long) -> Unit,
-    onAddProfile: (name: String, url: String, sourceType: SourceType) -> Unit
+    onImportContent: (String) -> Unit // Alinhado para receber o conteúdo bruto do TXT
 ) {
     var showAddSection by remember { mutableStateOf(false) }
-    var name by remember { mutableStateOf("") }
-    var url by remember { mutableStateOf("") }
-    var sourceType by remember { mutableStateOf(SourceType.URL) }
+    var rawTxtContent by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Gerenciar Perfis de IPTV") },
+        title = { Text("Gerenciar Perfis e Listas") },
         text = {
             Column(
                 modifier = Modifier
@@ -40,12 +38,12 @@ fun ProfileManagerDialog(
                         onClick = { showAddSection = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Adicionar Novo Perfil")
+                        Text("Importar Nova Lista (TXT)")
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text("Perfis Salvos:", style = MaterialTheme.typography.titleSmall)
+                    Text("Perfis Salvos no Banco:", style = MaterialTheme.typography.titleSmall)
 
                     if (profiles.isEmpty()) {
                         Text("Nenhum perfil cadastrado.", style = MaterialTheme.typography.bodyMedium)
@@ -75,7 +73,6 @@ fun ProfileManagerDialog(
                                     ) {
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(text = profile.name, style = MaterialTheme.typography.bodyLarge)
-                                            Text(text = "Tipo: ${profile.sourceType}", style = MaterialTheme.typography.bodySmall)
                                         }
                                         Row {
                                             if (profile.id != activeProfileId) {
@@ -93,18 +90,15 @@ fun ProfileManagerDialog(
                         }
                     }
                 } else {
-                    Text("Novo Perfil", style = MaterialTheme.typography.titleSmall)
+                    Text("Cole o conteúdo da lista TXT abaixo:", style = MaterialTheme.typography.titleSmall)
                     OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Nome da Lista") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = url,
-                        onValueChange = { url = it },
-                        label = { Text("URL / Caminho") },
-                        modifier = Modifier.fillMaxWidth()
+                        value = rawTxtContent,
+                        onValueChange = { rawTxtContent = it },
+                        label = { Text("Conteúdo do arquivo .txt / M3U") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        maxLines = 10
                     )
                 }
             }
@@ -112,14 +106,13 @@ fun ProfileManagerDialog(
         confirmButton = {
             if (showAddSection) {
                 Button(onClick = {
-                    if (name.isNotBlank()) {
-                        onAddProfile(name, url, sourceType)
+                    if (rawTxtContent.isNotBlank()) {
+                        onImportContent(rawTxtContent) // Executa o parser e salva no Room
                         showAddSection = false
-                        name = ""
-                        url = ""
+                        rawTxtContent = ""
                     }
                 }) {
-                    Text("Salvar")
+                    Text("Processar e Salvar")
                 }
             } else {
                 TextButton(onClick = onDismiss) {
