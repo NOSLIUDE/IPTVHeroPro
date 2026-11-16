@@ -21,7 +21,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Cria o gradlew automaticamente se ele estiver faltando no repositório
+      # 3. Cria o gradlew automaticamente caso não esteja no repositório
       - name: Auto-generate Gradle Wrapper if missing
         run: |
           if [ ! -f "./gradlew" ]; then
@@ -30,13 +30,13 @@ jobs:
             gradle wrapper --gradle-version 8.7
           fi
 
-      # 4. Garante permissão de execução
+      # 4. Garante permissão de execução ao script do Gradle
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 5. Compila o APK em modo Debug com rastreio detalhado
+      # 5. Compila o APK em modo Debug de forma estável
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --max-workers=2 --stacktrace
 
       # 6. Salva o APK gerado como artefato para download
       - name: Upload APK Artifact
@@ -45,3 +45,4 @@ jobs:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
+          
