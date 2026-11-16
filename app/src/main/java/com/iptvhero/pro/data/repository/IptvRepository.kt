@@ -1,168 +1,111 @@
 package com.iptvhero.pro.data.repository
 
-import android.net.Uri
-import com.iptvhero.pro.data.local.ProfileDao
-import com.iptvhero.pro.data.local.ProfileEntity
-import com.iptvhero.pro.data.local.SourceType
-import com.iptvhero.pro.data.model.ContentTab
-import com.iptvhero.pro.data.model.SeasonItem
-import com.iptvhero.pro.data.remote.M3uParser
-import com.iptvhero.pro.data.remote.ParsedPlaylist
-import com.iptvhero.pro.data.remote.ProxyInterceptor
-import com.iptvhero.pro.data.remote.XtreamApiClient
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import com.iptvhero.pro.data.local.dao.ChannelDao
+import com.iptvhero.pro.data.local.dao.ProfileDao
+import com.iptvhero.pro.data.local.entity.ChannelEntity
+import com.iptvhero.pro.data.local.entity.ProfileEntity
 import kotlinx.coroutines.flow.Flow
-import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
 
-class IptvRepository(private val profileDao: ProfileDao) {
+data class ParsedPlaylist(
+    val profileName: String,
+    val items: List<PlaylistItem>
+)
 
-    val proxyInterceptor = ProxyInterceptor()
+data class PlaylistItem(
+    val title: String,
+    val url: String
+)
 
-    val okHttpClient: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(proxyInterceptor)
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .build()
+object PlaylistParser {
+    fun parseBatchTxtFile(fileContent: String): List<ParsedPlaylist> {
+        val result = mutableListOf<ParsedPlaylist>()
+        val lines = fileContent.lines()
+        
+        var currentProfileName = "Lista Importada 1"
+        var currentItems = mutableListOf<PlaylistItem>()
+        var listCounter = 1
 
-    private val xtreamClient = XtreamApiClient(okHttpClient)
+        for (rawLine in lines) {
+            val line = rawLine.trim()
+            if (line.isEmpty()) continue
 
-    val allProfiles: Flow<List<ProfileEntity>> = profileDao.getAllProfiles()
-    val activeProfile: Flow<ProfileEntity?> = profileDao.getActiveProfile()
+            if (isPlaylistHeader(line)) {
+                if (currentItems.isNotEmpty()) {
+                    result.add(ParsedPlaylist(currentProfileName, currentItems.toList()))
+                    currentItems.clear()
+                }
+                currentProfileName = cleanHeaderName(line) ?: "Lista ${++listCounter}"
+                continue
+            }
 
-    fun setProxyUrl(url: String) {
-        proxyInterceptor.proxyPrefix = url
+            val parsedItem = parseLineToPlaylistItem(line)
+            if (parsedItem != null) {
+                currentItems.add(parsedItem)
+            }
+        }
+
+        if (currentItems.isNotEmpty()) {
+            result.add(ParsedPlaylist(currentProfileName, currentItems.toList()))
+        }
+
+        return result
     }
 
-    suspend fun activateProfile(profileId: Long) {
+    private fun isPlaylistHeader(line: String): Boolean {
+        return (line.startsWith("[") && line.endsWith("]")) || 
+               (line.startsWith("#") && !line.contains("http") && line.length > 3) ||
+               line.startsWith("---") || 
+               line.startsWith("===")
+    }
+
+    private fun cleanHeaderName(line: String): String? {
+        return line.removeSurrounding("[", "]")
+                   .removePrefix("#")
+                   .removePrefix("---")
+                   .removeSuffix("---")
+                   .trim()
+                   .takeIf { it.isNotEmpty() }
+    }
+
+    private fun parseLineToPlaylistItem(line: String): PlaylistItem? {
+        val parts = line.split(",", limit = 2)
+        return if (parts.size == 2) {
+            PlaylistItem(title = parts[0].trim(), url = parts[1].trim())
+        } else if (line.startsWith("http://") || line.startsWith("https://")) {
+            PlaylistItem(title = "Canal Sem Nome", url = line)
+        } else {
+            null
+        }
+    }
+}
+
+class IptvRepository(
+    private val profileDao: ProfileDao,
+    private val channelDao: ChannelDao
+) {
+    val allProfiles: Flow<List<ProfileEntity>> = profileDao.getAllProfiles()
+
+    suspend fun getActiveProfile(): ProfileEntity? = profileDao.getActiveProfile()
+
+    suspend fun setActiveProfile(profileId: Long) {
         profileDao.setActiveProfile(profileId)
     }
 
-    suspend fun deleteProfile(profile: ProfileEntity) {
-        profileDao.deleteProfile(profile)
-    }
+    suspend fun importBatchTxt(fileContent: String) {
+        val parsedLists = PlaylistParser.parseBatchTxtFile(fileContent)
 
-    suspend fun addAndValidateProfile(
-        heroName: String,
-        sourceType: SourceType,
-        server: String,
-        username: String,
-        password: String,
-        setActive: Boolean = true
-    ): Result<ProfileEntity> = runCatching {
-        var expiry = 0L
-        var maxConn = 1
-        var liveCount = 0
-        var vodCount = 0
-        var seriesCount = 0
+        for (playlist in parsedLists) {
+            val newProfile = ProfileEntity(name = playlist.profileName)
+            val profileId = profileDao.insertProfile(newProfile) 
 
-        if (sourceType == SourceType.XTREAM) {
-            val authInfo = xtreamClient.authenticate(server, username, password)
-            expiry = authInfo.expiryTimestampMs
-            maxConn = authInfo.maxConnections
-        } else {
-            val raw = xtreamClient.downloadRawText(server)
-            val parsed = M3uParser.parse(raw)
-            liveCount = parsed.liveItems.size
-            vodCount = parsed.movieItems.size
-            seriesCount = parsed.seriesItems.size
-        }
-
-        val entity = ProfileEntity(
-            heroName = heroName.ifBlank { "Herói #${System.currentTimeMillis() % 1000}" },
-            sourceType = sourceType.name,
-            server = server.trim(),
-            username = username.trim(),
-            password = password.trim(),
-            expiryDate = expiry,
-            maxConnections = maxConn,
-            liveCount = liveCount,
-            vodCount = vodCount,
-            seriesCount = seriesCount,
-            isActive = setActive
-        )
-
-        val newId = profileDao.insertProfile(entity)
-        if (setActive) {
-            profileDao.setActiveProfile(newId)
-        }
-        entity.copy(id = newId)
-    }
-
-    suspend fun loadProfileContent(profile: ProfileEntity): Result<ParsedPlaylist> = runCatching {
-        if (profile.sourceType == SourceType.XTREAM.name) {
-            coroutineScope {
-                val liveCatDef = async { xtreamClient.getCategories(profile.server, profile.username, profile.password, ContentTab.LIVE) }
-                val vodCatDef = async { xtreamClient.getCategories(profile.server, profile.username, profile.password, ContentTab.MOVIES) }
-                val serCatDef = async { xtreamClient.getCategories(profile.server, profile.username, profile.password, ContentTab.SERIES) }
-
-                val liveCats = liveCatDef.await()
-                val vodCats = vodCatDef.await()
-                val serCats = serCatDef.await()
-
-                val liveMap = liveCats.associate { it.id to it.name }
-                val vodMap = vodCats.associate { it.id to it.name }
-                val serMap = serCats.associate { it.id to it.name }
-
-                val liveStreamsDef = async { xtreamClient.getStreams(profile.server, profile.username, profile.password, ContentTab.LIVE, liveMap) }
-                val vodStreamsDef = async { xtreamClient.getStreams(profile.server, profile.username, profile.password, ContentTab.MOVIES, vodMap) }
-                val serStreamsDef = async { xtreamClient.getStreams(profile.server, profile.username, profile.password, ContentTab.SERIES, serMap) }
-
-                val liveItems = liveStreamsDef.await()
-                val vodItems = vodStreamsDef.await()
-                val serItems = serStreamsDef.await()
-
-                profileDao.updateCounts(profile.id, liveItems.size, vodItems.size, serItems.size)
-
-                ParsedPlaylist(
-                    liveItems = liveItems,
-                    movieItems = vodItems,
-                    seriesItems = serItems,
-                    liveCategories = liveCats,
-                    movieCategories = vodCats,
-                    seriesCategories = serCats
+            val channelEntities = playlist.items.map { item ->
+                ChannelEntity(
+                    profileId = profileId,
+                    title = item.title,
+                    url = item.url
                 )
             }
-        } else {
-            val raw = xtreamClient.downloadRawText(profile.server)
-            val parsed = M3uParser.parse(raw)
-            profileDao.updateCounts(
-                profile.id,
-                parsed.liveItems.size,
-                parsed.movieItems.size,
-                parsed.seriesItems.size
-            )
-            parsed
-        }
-    }
-
-    suspend fun fetchSeriesSeasons(profile: ProfileEntity, seriesId: String): Result<List<SeasonItem>> = runCatching {
-        if (profile.sourceType == SourceType.XTREAM.name) {
-            xtreamClient.getSeriesInfo(profile.server, profile.username, profile.password, seriesId)
-        } else {
-            emptyList()
-        }
-    }
-
-    suspend fun downloadRemoteHeroLines(listUrl: String): Result<List<String>> = runCatching {
-        val raw = xtreamClient.downloadRawText(listUrl.trim())
-        raw.lines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("#") && it.startsWith("http", ignoreCase = true) }
-    }
-
-    fun parseLineToProfileParams(lineUrl: String, index: Int): Triple<SourceType, String, Pair<String, String>> {
-        val uri = Uri.parse(lineUrl)
-        val user = uri.getQueryParameter("username")
-        val pass = uri.getQueryParameter("password")
-        return if (!user.isNullOrEmpty() && !pass.isNullOrEmpty()) {
-            val baseServer = "${uri.scheme}://${uri.authority}"
-            Triple(SourceType.XTREAM, baseServer, user to pass)
-        } else {
-            val type = if (lineUrl.lowercase().endsWith(".txt")) SourceType.TXT else SourceType.M3U
-            Triple(type, lineUrl, "" to "")
+            channelDao.insertChannels(channelEntities)
         }
     }
 }
