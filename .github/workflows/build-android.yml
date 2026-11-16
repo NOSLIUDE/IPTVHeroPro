@@ -34,11 +34,25 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 5. Compila o APK em modo Debug de forma estável
+      # 5. Ativa o AndroidX no gradle.properties automaticamente
+      - name: Ensure AndroidX configuration
+        run: |
+          PROPERTIES_FILE="gradle.properties"
+          if [ ! -f "$PROPERTIES_FILE" ]; then
+            touch "$PROPERTIES_FILE"
+          fi
+          if ! grep -q "android.useAndroidX=true" "$PROPERTIES_FILE"; then
+            echo "android.useAndroidX=true" >> "$PROPERTIES_FILE"
+          fi
+          if ! grep -q "android.enableJetifier=true" "$PROPERTIES_FILE"; then
+            echo "android.enableJetifier=true" >> "$PROPERTIES_FILE"
+          fi
+
+      # 6. Compila o APK em modo Debug de forma estável
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --max-workers=2 --stacktrace
 
-      # 6. Salva o APK gerado como artefato para download
+      # 7. Salva o APK gerado como artefato para download
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
