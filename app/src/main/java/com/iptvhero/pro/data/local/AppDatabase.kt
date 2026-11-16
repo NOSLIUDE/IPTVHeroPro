@@ -26,7 +26,13 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "iptv_hero_database"
-                ).build()
+                    val Database = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "iptv_hero_database"
+)
+        .fallbackToDestructiveMigration()
+        .build()
                 INSTANCE = instance
                 instance
             }
