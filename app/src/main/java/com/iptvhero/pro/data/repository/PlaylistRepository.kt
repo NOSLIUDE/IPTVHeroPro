@@ -28,7 +28,6 @@ object PlaylistParser {
             val line = rawLine.trim()
             if (line.isEmpty()) continue
 
-            // Detecta cabeçalhos (ex: [Nome da Lista] ou marcadores)
             if (isPlaylistHeader(line)) {
                 if (currentItems.isNotEmpty()) {
                     result.add(ParsedPlaylist(currentProfileName, currentItems.toList()))
@@ -38,7 +37,6 @@ object PlaylistParser {
                 continue
             }
 
-            // Processa a linha do canal
             val parsedItem = parseLineToPlaylistItem(line)
             if (parsedItem != null) {
                 currentItems.add(parsedItem)
@@ -84,19 +82,13 @@ class PlaylistRepository(
     private val profileDao: ProfileDao,
     private val channelDao: ChannelDao
 ) {
-    /**
-     * Importa o arquivo TXT em lote, fazendo o parse e inserindo automaticamente
-     * os perfis e canais no banco de dados Room. Recebe apenas o conteúdo bruto.
-     */
     suspend fun importBatchTxt(fileContent: String) {
         val parsedLists = PlaylistParser.parseBatchTxtFile(fileContent)
 
         for (playlist in parsedLists) {
-            // 1. Cria e insere o perfil no Room, obtendo o ID gerado
             val newProfile = ProfileEntity(name = playlist.profileName)
             val profileId = profileDao.insertProfile(newProfile) 
 
-            // 2. Associa e insere todos os canais ao ID do perfil
             val channelEntities = playlist.items.map { item ->
                 ChannelEntity(
                     profileId = profileId,
