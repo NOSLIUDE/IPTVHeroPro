@@ -1,14 +1,13 @@
 package com.iptvhero.pro.data.local
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [
-        ProfileEntity::class,
-        ChannelEntity::class
-    ],
-    version = 1,
+    entities = [ProfileEntity::class, ChannelEntity::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -20,19 +19,16 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: android.content.Context): AppDatabase {
+        fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = androidx.room.Room.databaseBuilder(
+                val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "iptv_hero_database"
-                    val Database = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "iptv_hero_database"
-)
-        .fallbackToDestructiveMigration()
-        .build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
+                
                 INSTANCE = instance
                 instance
             }
