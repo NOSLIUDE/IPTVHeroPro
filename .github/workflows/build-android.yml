@@ -3,7 +3,7 @@ name: Build Android Native APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Permite disparar o build manualmente pela aba Actions
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,27 +14,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Configura o Java JDK 17 (padrão para o Android moderno)
+      # 2. Configura o Java JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
-      # 3. Dá permissão de execução para o script do Gradle
+      # 3. Cria o gradlew automaticamente se ele estiver faltando no repositório
+      - name: Auto-generate Gradle Wrapper if missing
+        run: |
+          if [ ! -f "./gradlew" ]; then
+            echo "Gradle wrapper não encontrado. A gerar automaticamente..."
+            sudo apt-get update && sudo apt-get install -y gradle
+            gradle wrapper --gradle-version 8.7
+          fi
+
+      # 4. Garante permissão de execução
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4. Compila o APK em modo Debug
+      # 5. Compila o APK em modo Debug
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      # 5. Salva o APK gerado como artefato para download
+      # 6. Salva o APK gerado como artefato para download
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
-          
