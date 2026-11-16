@@ -1,10 +1,9 @@
-package com.iptvhero.pro.data.local.dao
+package com.iptvhero.pro.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.iptvhero.pro.data.local.entity.ProfileEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
