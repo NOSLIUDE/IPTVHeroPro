@@ -1,14 +1,7 @@
-package com.iptvhero.pro.data.local.entity
+package com.iptvhero.pro.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
-@Entity(tableName = "profiles")
-data class ProfileEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val name: String
-)
 
 @Entity(tableName = "channels")
 data class ChannelEntity(
