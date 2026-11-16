@@ -62,7 +62,7 @@ fun MainScreen(
         }
     }
 
-        if (showProfileDialog) {
+    if (showProfileDialog) {
         ProfileManagerDialog(
             profiles = profiles,
             activeProfileId = activeProfile?.id,
@@ -71,14 +71,11 @@ fun MainScreen(
                 viewModel.selectProfile(profileId)
             },
             onDeleteProfile = { profileId ->
-                // Ação de exclusão se implementada
+                // Ação de exclusão se necessário
             },
             onImportContent = { txtContent ->
-                viewModel.importBatchTxt(txtContent) // <--- Liga o diálogo ao parser do ViewModel
+                viewModel.importBatchTxt(txtContent)
                 showProfileDialog = false
-            }
-            onAddProfile = { name, url, sourceType ->
-                // Opcional: implementar adição rápida se necessário
             }
         )
     }
