@@ -1,4 +1,4 @@
-package com.example.iptvheropro.ui.screen
+package com.iptvhero.pro.ui.screens
 
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.iptvheropro.ui.viewmodel.PlaylistViewModel
+import com.iptvhero.pro.ui.viewmodel.PlaylistViewModel
 
 @Composable
 fun ImportPlaylistScreen(
@@ -20,15 +20,13 @@ fun ImportPlaylistScreen(
     val isLoading = viewModel.isLoading
     val importMessage = viewModel.importMessage
 
-    // Observa mudanças na mensagem de feedback para disparar o Toast nativo
     LaunchedEffect(importMessage) {
         importMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-            viewModel.clearMessage() // Reseta após a exibição
+            viewModel.clearMessage()
         }
     }
 
-    // Seletor de arquivos do Android filtrando apenas arquivos de texto (.txt)
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -51,7 +49,6 @@ fun ImportPlaylistScreen(
         contentAlignment = Alignment.Center
     ) {
         if (isLoading) {
-            // Exibe indicador de progresso enquanto o arquivo é processado e salvo no Room
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -63,7 +60,6 @@ fun ImportPlaylistScreen(
                 )
             }
         } else {
-            // Exibe o botão principal de importação
             Button(
                 onClick = { filePickerLauncher.launch("text/plain") },
                 modifier = Modifier.fillMaxWidth(0.8f)
