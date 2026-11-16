@@ -1,24 +1,18 @@
 package com.iptvhero.pro.data.local
+package com.iptvhero.pro.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-enum class ExpiryStatus {
-    ACTIVE, EXPIRED
-}
 
 @Entity(tableName = "profiles")
 data class ProfileEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    val id: Long = 0L,
     val name: String,
     val sourceType: String = "URL",
-    val expiryDate: Long? = null,
-    val isActive: Boolean = false
-) {
+    val isActive: Boolean = false // <--- Essencial para corresponder ao ProfileDao e passar no KSP
+) 
+{
     fun getFormattedExpiry(): String {
         return if (expiryDate != null) {
             val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
