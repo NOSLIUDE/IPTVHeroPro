@@ -1,0 +1,42 @@
+name: Build Android App
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Permite disparar o build manualmente pela aba 'Actions' do GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Baixa o código do repositório para o servidor virtual
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura o Java JDK (geralmente versão 17 para projetos Android modernos)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # 3. Garante permissão de execução para o script do Gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. Executa a compilação do APK em modo Debug
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      # 5. Salva o APK gerado como um artefato para download
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-artifact
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+          
