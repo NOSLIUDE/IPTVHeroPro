@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xmx4096m -Dfile.encoding=UTF-8"
+      JAVA_TOOL_OPTIONS: "-Xmx4096m"
 
     steps:
       # 1. Baixa o código do repositório
@@ -34,8 +37,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 5. Ativa o AndroidX no gradle.properties automaticamente
-      - name: Ensure AndroidX configuration
+      # 5. Configura o AndroidX e limites de memória no gradle.properties
+      - name: Configure gradle.properties for memory and AndroidX
         run: |
           PROPERTIES_FILE="gradle.properties"
           if [ ! -f "$PROPERTIES_FILE" ]; then
@@ -47,8 +50,14 @@ jobs:
           if ! grep -q "android.enableJetifier=true" "$PROPERTIES_FILE"; then
             echo "android.enableJetifier=true" >> "$PROPERTIES_FILE"
           fi
+          if ! grep -q "org.gradle.jvmargs" "$PROPERTIES_FILE"; then
+            echo "org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8" >> "$PROPERTIES_FILE"
+          fi
+          if ! grep -q "org.gradle.workers.max" "$PROPERTIES_FILE"; then
+            echo "org.gradle.workers.max=2" >> "$PROPERTIES_FILE"
+          fi
 
-      # 6. Compila o APK em modo Debug de forma estável
+      # 6. Compila o APK em modo Debug com limite de workers e stacktrace
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --max-workers=2 --stacktrace
 
@@ -59,4 +68,3 @@ jobs:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
-          
