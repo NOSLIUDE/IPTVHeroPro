@@ -308,7 +308,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     appendBatchLog("✖ Falha em $heroName: ${err.message}", isError = true)
                 }
 
-                val progress = (index + 1).toFloat() / urls.size.toFloat()
+            
+                val progress = (index + 1).toFloat() / urls.count().toFloat()
+
                 _uiState.update { it.copy(batchProgress = progress) }
             }
 
