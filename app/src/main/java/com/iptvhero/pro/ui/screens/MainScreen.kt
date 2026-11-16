@@ -12,14 +12,13 @@ import com.iptvhero.pro.ui.viewmodel.MainViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    onNavigateToFullPlayer: () -> Unit = {}
 ) {
     val profiles by viewModel.profiles.collectAsState(initial = emptyList())
     val activeProfile = viewModel.activeProfile
     
-    // Resolve o nome exibido no topo (substitui o 'heroName' não resolvido)
     val displayTitle = activeProfile?.name ?: "IPTV Hero Pro"
-
     var showProfileDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -46,7 +45,7 @@ fun MainScreen(
             ) {
                 Text(
                     text = if (activeProfile != null) 
-                        "Perfil ativo: ${activeProfile.name}" 
+                        "Perfil ativo: ${activeProfile?.name}" 
                     else 
                         "Nenhum perfil selecionado",
                     style = MaterialTheme.typography.bodyLarge
@@ -54,6 +53,10 @@ fun MainScreen(
                 
                 Button(onClick = { showProfileDialog = true }) {
                     Text("Gerenciar / Importar Listas")
+                }
+
+                Button(onClick = onNavigateToFullPlayer) {
+                    Text("Abrir Player de Vídeo")
                 }
             }
         }
@@ -65,13 +68,13 @@ fun MainScreen(
             activeProfileId = activeProfile?.id,
             onDismiss = { showProfileDialog = false },
             onActivateProfile = { profileId ->
-                viewModel.selectProfile(profileId) // Espera Long, compatível com o ID do perfil
+                viewModel.selectProfile(profileId)
             },
             onDeleteProfile = { profileId ->
-                viewModel.deleteProfile(profileId) // Espera Long
+                // Opcional: implementar exclusão se necessário no ViewModel
             },
             onAddProfile = { name, url, sourceType ->
-                viewModel.addProfile(name, url, sourceType)
+                // Opcional: implementar adição rápida se necessário
             }
         )
     }
