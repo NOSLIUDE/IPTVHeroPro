@@ -1,4 +1,4 @@
-package com.iptvhero.pro.data.local.entity
+package com.iptvhero.pro.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -16,7 +16,7 @@ data class ProfileEntity(
     val id: Long = 0,
     val name: String,
     val sourceType: String = "URL",
-    val expiryDate: Long? = null, // Timestamp em milissegundos
+    val expiryDate: Long? = null,
     val isActive: Boolean = false
 ) {
     fun getFormattedExpiry(): String {
